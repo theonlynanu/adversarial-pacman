@@ -20,6 +20,13 @@ DIRECTIONS_TO_IDX = {
     "Southwest": 7
 }
 
+#Constants for reward calculations
+REWARD_PELLET = 1
+REWARD_POWER = 10
+REWARD_GHOST = 50
+REWARD_DEATH = -500
+REWARD_STEP = -1
+
 
 
 """ ========================== MAIN CLASS ========================== """
@@ -80,24 +87,70 @@ class PacmanEnv(gym.Env):
         
     """ _________ GYM API _________ """
     def _reset_game(self):
-        self.state = GameState()
         layout = get_layout(self.layout_name)
+        self.state = GameState()
         self.state.initialize(layout, self.num_ghosts)
+
+        rules = ClassicGameRules()
+        self.game = Game(self.state, display=rules.get_display(self.state), rules=rules)
+        self.prev_score = self.state.get_score()
+        self._build_observation_space()
+    
     
 
-    def reset(self, *, seed= None, options: None):
+    def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
         self._reset_game()
         return self._make_obs(), {}
     
     def step(self, action: int):
-        pass
+        if self.training_agent == 'pacman':
+            # Apply action to Pacman
+            pacman_action = self._actions[action]
+            self.state = self.state.generate_successor(0, pacman_action)
+
+            # Default ghost behaviors
+            for ghost_idx in range(1, self.num_ghosts + 1):
+                ghost_action = Directions.STOP  # Replace with smarter logic later
+                self.state = self.state.generate_successor(ghost_idx, ghost_action)
+
+        elif self.training_agent == 'ghost':
+            # Apply action to ghost being trained
+            ghost_action = self._actions[action]
+            self.state = self.state.generate_successor(self.ghost_train_idx, ghost_action)
+
+            # Default behavior for Pacman
+            pacman_action = Directions.STOP  # or a simple rule-based policy
+            self.state = self.state.generate_successor(0, pacman_action)
+
+            # Default for other ghosts
+            for ghost_idx in range(1, self.num_ghosts + 1):
+                if ghost_idx == self.ghost_train_idx:
+                    continue
+                self.state = self.state.generate_successor(ghost_idx, Directions.STOP)
+        
+        else:
+            raise ValueError(f"Unknown training_agent: {self.training_agent}")
+
+        # Compute reward and done
+        reward = self.state.get_score() - self.prev_score
+        self.prev_score = self.state.get_score()
+        done = self.state.is_win() or self.state.is_lose()
+
+        return self._make_obs(), reward, done, False, {}
+
             
     
     # TODO - Extend this to be able to render in-terminal using text_display.py
     def render(self):
-        if self.render_mode != "graphics":
-            return None
+        if self.render_mode == "graphics":
+            # Refresh the graphics window with the latest state
+            self.game.display.update(self.state.data)
+        elif self.render_mode == "text":
+            # Placeholder for future terminal rendering support
+            print(self.state)
+        else:
+            raise ValueError(f"Unsupported render_mode: {self.render_mode}")
     
 
     def close(self):
