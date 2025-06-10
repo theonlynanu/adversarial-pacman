@@ -26,7 +26,8 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-import mdp, util
+import pacman_engine.mdp as mdp
+import pacman_engine.util as util
 
 from learning_agents import ValueEstimationAgent
 import collections

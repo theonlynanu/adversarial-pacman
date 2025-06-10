@@ -12,12 +12,12 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from game import Agent
-from game import Actions
-from game import Directions
+from pacman_engine.game import Agent
+from pacman_engine.game import Actions
+from pacman_engine.game import Directions
 import random
-from util import manhattan_distance
-import util
+from pacman_engine.util import manhattan_distance
+import pacman_engine.util as util
 
 
 class GhostAgent(Agent):

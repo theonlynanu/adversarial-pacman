@@ -12,7 +12,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from game import Directions, Agent, Actions
+from pacman_engine.game import Directions, Agent, Actions
 
 import random,util,time
 

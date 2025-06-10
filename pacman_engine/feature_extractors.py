@@ -14,8 +14,8 @@
 
 """Feature extractors for Pacman game states"""
 
-from game import Directions, Actions
-import util
+from pacman_engine.game import Directions, Actions
+import pacman_engine.util
 
 class FeatureExtractor:
     def get_features(self, state, action):

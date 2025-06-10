@@ -39,14 +39,10 @@ code to run a game.  This file is divided into three sections:
 To play your first game, type 'python pacman.py' from the command line.
 The keys are 'a', 's', 'd', and 'w' to move (or arrow keys).  Have fun!
 """
-from game import GameStateData
-from game import Game
-from game import Directions
-from game import Actions
-from util import nearest_point
-from util import manhattan_distance
-import util
-import layout
+from pacman_engine.game import GameStateData, Game, Directions, Actions
+from pacman_engine.util import nearest_point, manhattan_distance
+import pacman_engine.util as util
+import pacman_engine.layout as layout
 import sys
 import types
 import time
@@ -591,14 +587,14 @@ def read_command(argv):
 
     # Choose a display format
     if options.quiet_graphics:
-        import text_display
+        import pacman_engine.text_display as text_display
         args['display'] = text_display.NullGraphics()
     elif options.text_graphics:
-        import text_display
+        import pacman_engine.text_display as text_display
         text_display.SLEEP_TIME = options.frame_time
         args['display'] = text_display.PacmanGraphics()
     else:
-        import graphics_display
+        import pacman_engine.graphics_display as graphics_display
         args['display'] = graphics_display.PacmanGraphics(
             options.zoom, frame_time=options.frame_time)
     args['num_games'] = options.num_games
@@ -650,8 +646,8 @@ def load_agent(pacman, no_graphics):
 
 
 def replay_game(layout, actions, display):
-    import pacman_agents
-    import ghost_agents
+    import pacman_engine.pacman_agents as pacman_agents
+    import pacman_engine.ghost_agents as ghost_agents
     rules = ClassicGameRules()
     agents = [pacman_agents.GreedyAgent()] + [ghost_agents.RandomGhost(i + 1)
                                               for i in range(layout.get_num_ghosts())]
@@ -681,7 +677,7 @@ def run_games(layout, pacman, ghosts, display, num_games, record, num_training=0
         be_quiet = (i < num_training)
         if be_quiet:
                 # Suppress output and graphics
-            import text_display
+            import pacman_engine.text_display as text_display
             game_display = text_display.NullGraphics()
             rules.quiet = True
         else:

@@ -12,9 +12,9 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from game import *
-from learning_agents import ReinforcementAgent
-from feature_extractors import *
+from pacman_engine.game import *
+from pacman_engine.learning_agents import ReinforcementAgent
+from pacman_engine.feature_extractors import *
 
 import random,util,math
 

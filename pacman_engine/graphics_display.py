@@ -12,11 +12,11 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from graphics_utils import *
+from pacman_engine.graphics_utils import *
 import math
 import time
-from game import Directions
-from pacman import GameState
+from pacman_engine.game import Directions
+from pacman_engine.pacman import GameState
 
 ###########################
 #  GRAPHICS DISPLAY CODE  #

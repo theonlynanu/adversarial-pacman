@@ -12,10 +12,10 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from pacman import Directions
-from game import Agent
+from pacman_engine.pacman import Directions
+from pacman_engine.game import Agent
 import random
-import game
+import pacman_engine.game as game
 import util
 
 
