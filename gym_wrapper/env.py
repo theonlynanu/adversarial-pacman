@@ -191,14 +191,17 @@ class PacmanEnv(gym.Env):
         h, w = data.layout.height, data.layout.width
         grid = np.zeros((h, w, 6), dtype=int)
         
-        # Check walls - we want grid[x, y, 0] = data.layout.walls[x][y]
-        grid[:, :, 0] = np.transpose(int(data.layout.walls))
-        
-        # Check pellets
-        grid[:, :, 1] = np.transpose(int(data.layout.food))
+        # Check walls and food - we want grid[x, y, 0] = data.layout.walls[x][y]
+        for x in range(w):
+            for y in range(h):
+                if data.layout.walls[x][y]:
+                    grid[y, x, 0] = 1
+                if data.food[x][y]:
+                    grid[y, x, 1] = 1
         
         # Check power pellets
-        grid[:, :, 2] = np.transpose(int(data.capsules))
+        for cx, cy in data.capsules:
+            grid[cy, cx, 2] = 1
         
         # Check pacman
         x, y = self.state.get_pacman_position()
