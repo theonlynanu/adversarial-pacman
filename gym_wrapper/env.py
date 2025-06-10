@@ -6,8 +6,6 @@ from pacman_engine.pacman import Directions, ClassicGameRules, GameState
 from pacman_engine.game import Game, GameStateData, Actions
 from pacman_engine.layout import Layout, get_layout
 
-
-
 """ -------------------- CONSTANTS AND HELPERS -------------------- """
 DIRECTIONS_TO_IDX = {
     'North': 0,
@@ -91,8 +89,10 @@ class PacmanEnv(gym.Env):
         self.state = GameState()
         self.state.initialize(layout, self.num_ghosts)
 
-        rules = ClassicGameRules()
-        self.game = Game(self.state, display=rules.get_display(self.state), rules=rules)
+        # DA - Not entirely sure why we need this here. Also the Rules objects do not 
+        # have a get_display() method as far as I can see - am I missing something?
+        # rules = ClassicGameRules()
+        # self.game = Game(self.state, display=rules.get_display(self.state), rules=rules)
         self.prev_score = self.state.get_score()
         self._build_observation_space()
     
@@ -135,17 +135,25 @@ class PacmanEnv(gym.Env):
         # Compute reward and done
         reward = self.state.get_score() - self.prev_score
         self.prev_score = self.state.get_score()
+        truncated = False
         done = self.state.is_win() or self.state.is_lose()
 
-        return self._make_obs(), reward, done, False, {}
+        return self._make_obs(), reward, done, truncated, False, {}
 
-            
+    def _ensure_display(self):
+        if self.render_mode != 'graphics':
+            return
+        if hasattr(self, "_display"):
+            return
+        from pacman_engine.graphics_display import PacmanGraphics
+        self._display = PacmanGraphics()
+        self._display.initialize(self.state.data)
     
     # TODO - Extend this to be able to render in-terminal using text_display.py
     def render(self):
         if self.render_mode == "graphics":
-            # Refresh the graphics window with the latest state
-            self.game.display.update(self.state.data)
+            self._ensure_display()
+            self._display.update(self.state.data)
         elif self.render_mode == "text":
             # Placeholder for future terminal rendering support
             print(self.state)
@@ -154,7 +162,10 @@ class PacmanEnv(gym.Env):
     
 
     def close(self):
-        pass
+        if hasattr(self, "_display"):
+            self._display.finish()
+            del self._display
+            
         
         
     """ ~~~~~~~~~~~ Observation Helpers ~~~~~~~~~~~ """
@@ -201,9 +212,4 @@ class PacmanEnv(gym.Env):
             grid[int(y), int(x), layer] = 1
             
         return grid
-        
-
-        
-            
-            
         
