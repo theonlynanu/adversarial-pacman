@@ -50,10 +50,9 @@ class PacmanEnv(gym.Env):
         """
     metadata = {"render_modes": ["graphics", "text"]}
     
-    def __init__(self, *, 
+    def __init__(self,
                  layout=        "mediumClassic",
                  render_mode=   "graphics",
-                 num_ghosts=    4,
                  obs_type=      "grid",
                  training_agent=   "pacman",
                  ghost_train_idx=   1,
@@ -63,7 +62,6 @@ class PacmanEnv(gym.Env):
         
         self.layout_name = layout
         self.render_mode = render_mode
-        self.num_ghosts = min(max(1, num_ghosts), 4)    # Confine num_ghosts to [1,4]
         self.obs_type = obs_type
         self.training_agent = training_agent
         self.ghost_train_idx = ghost_train_idx
@@ -86,6 +84,7 @@ class PacmanEnv(gym.Env):
     """ _________ GYM API _________ """
     def _reset_game(self):
         layout = get_layout(self.layout_name)
+        self.num_ghosts = layout.get_num_ghosts()
         self.state = GameState()
         self.state.initialize(layout, self.num_ghosts)
 
