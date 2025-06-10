@@ -2,7 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from pacman_engine.pacman import Directions, ClassicGameRules, GameState
+from pacman_engine.pacman import Directions, ClassicGameRules, GameState, GhostRules
 from pacman_engine.game import Game, GameStateData, Actions
 from pacman_engine.layout import Layout, get_layout
 
@@ -38,7 +38,7 @@ class PacmanEnv(gym.Env):
         obs_type:   str - Type of observations the agent can make. 'grid' for a
                     full board view, 'directional' for an immediate view + directional
                     view of the ghosts (default: 'grid')
-        training_agent: str - 'pacman' | 'ghost', defines the agent currently being trained
+        training_agent: str - 'pacman' | 'ghost' | None, defines the agent currently being trained
         ghost_train_idx: int - which ghost agent is being trained, if training_agent == 'ghost'
         
                     
@@ -103,14 +103,16 @@ class PacmanEnv(gym.Env):
         return self._make_obs(), {}
     
     def step(self, action: int):
+        # TODO - Build this out to interface better with the given Agent object.
+        
         if self.training_agent == 'pacman':
             # Apply action to Pacman
-            pacman_action = self._actions[action]
+            pacman_action = np.random.choice(self.state.get_legal_actions(0))
             self.state = self.state.generate_successor(0, pacman_action)
 
             # Default ghost behaviors
-            for ghost_idx in range(1, self.num_ghosts + 1):
-                ghost_action = Directions.STOP  # Replace with smarter logic later
+            for ghost_idx in range(1, self.state.get_num_agents()):
+                ghost_action = np.random.choice(self.state.get_legal_actions(ghost_idx))  # Replace with smarter logic later
                 self.state = self.state.generate_successor(ghost_idx, ghost_action)
 
         elif self.training_agent == 'ghost':
@@ -123,7 +125,7 @@ class PacmanEnv(gym.Env):
             self.state = self.state.generate_successor(0, pacman_action)
 
             # Default for other ghosts
-            for ghost_idx in range(1, self.num_ghosts + 1):
+            for ghost_idx in range(1, self.state.get_num_agents()):
                 if ghost_idx == self.ghost_train_idx:
                     continue
                 self.state = self.state.generate_successor(ghost_idx, Directions.STOP)
