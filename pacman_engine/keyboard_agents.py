@@ -34,8 +34,8 @@ class KeyboardAgent(Agent):
         self.keys = []
 
     def get_action(self, state):
-        from graphics_utils import keys_waiting
-        from graphics_utils import keys_pressed
+        from pacman_engine.graphics_utils import keys_waiting
+        from pacman_engine.graphics_utils import keys_pressed
         keys = keys_waiting() + keys_pressed()
         if keys:
             self.keys = keys
