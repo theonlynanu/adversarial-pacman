@@ -6,6 +6,7 @@ from pacman_engine.pacman import Directions, GameState
 from pacman_engine.layout import get_layout
 from pacman_engine.keyboard_agents import KeyboardAgent
 from pacman_engine.ghost_agents import RandomGhost
+from pacman_engine.graphics_utils import begin_graphics
 
 """ -------------------- CONSTANTS AND HELPERS -------------------- """
 DIRECTIONS_TO_IDX = {
@@ -76,6 +77,8 @@ class PacmanEnv(gym.Env):
         self.ghost_train_idx = ghost_train_idx
         self.num_ghosts = self.layout.get_num_ghosts()   # num_ghosts now automatically retrieved
         
+        begin_graphics()
+        
         # Attach agent objects if provided
         self.pacman_agent = pacman_agent or KeyboardAgent()
         if ghost_agents is None:
@@ -130,6 +133,7 @@ class PacmanEnv(gym.Env):
             pacman_action = self.pacman_agent.get_action(self.state)
             
         self.state = self.state.generate_pacman_successor(pacman_action)
+        if self.render_mode == 'graphics': self.render()
 
         terminated = self.state.is_win() or self.state.is_lose()
 
@@ -161,6 +165,7 @@ class PacmanEnv(gym.Env):
                 ghost_action = self.ghost_agents[ghost_idx - 1].get_action(self.state)
             
             self.state = self.state.generate_successor(ghost_idx, ghost_action)
+            self.render()
             terminated = self.state.is_lose() or self.state.is_win()
             
             
