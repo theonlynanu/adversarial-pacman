@@ -38,8 +38,6 @@ class PacmanEnv(gym.Env):
         render_mode:str - how the game should be rendered, if at all. Meant to extend the
                     capabilities of the base game engine to either create the GUI window
                     or run the text game in-terminal. (default: 'graphics')
-        num_ghosts: int - Maximum number of ghosts that can be spawned from the
-                    layout (default: 4)
         obs_type:   str - Type of observations the agent can make. 'grid' for a
                     full board view, 'directional' for an immediate view + directional
                     view of the ghosts (default: 'grid')
