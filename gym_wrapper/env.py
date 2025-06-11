@@ -58,7 +58,8 @@ class PacmanEnv(gym.Env):
                  training_agent=   None,
                  ghost_train_idx=   None,
                  pacman_agent = None,
-                 ghost_agents = None
+                 ghost_agents = None,
+                 frame_time = 0.05,     # 20fps, default of the base game as well
                  ):
         
         super().__init__()
@@ -68,6 +69,7 @@ class PacmanEnv(gym.Env):
         self.layout = get_layout(self.layout_name)
         
         self.render_mode = render_mode
+        self.frame_time = frame_time
         
         # This is gonna be changeable later, once we get our basic loop working
         self.obs_type = obs_type
@@ -235,7 +237,7 @@ class PacmanEnv(gym.Env):
         if hasattr(self, "_display"):
             return
         from pacman_engine.graphics_display import PacmanGraphics
-        self._display = PacmanGraphics()
+        self._display = PacmanGraphics(frame_time=self.frame_time)
         self._display.initialize(self.state.data)
             
         
