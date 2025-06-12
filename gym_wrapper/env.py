@@ -30,6 +30,7 @@ REWARD_STEP = -0.1    # Taking a step without eating a pellet
 REWARD_DELAY = -0.05 # Time delay to incentivize fast play. Might need to remove if
                     # this messes up how ghosts try to minimize scoring
 
+MAX_GHOST_SCARED_TIME = 40
 
 """ ========================== MAIN CLASS ========================== """
 class PacmanEnv(gym.Env):
@@ -171,27 +172,6 @@ class PacmanEnv(gym.Env):
             self.state = self.state.generate_successor(ghost_idx, ghost_action)
             self.render()
             terminated = self.state.is_lose() or self.state.is_win()
-            
-            
-            
-        
-        # elif self.training_mode == 'ghost':
-        #     # Apply action to ghost being trained
-        #     ghost_action = self._actions[action]
-        #     self.state = self.state.generate_successor(self.ghost_train_idx, ghost_action)
-        #     if not self.state.is_win() and not self.state.is_lose():
-
-        #         # Default behavior for Pacman
-        #         pacman_action = Directions.STOP  # or a simple rule-based policy
-        #         self.state = self.state.generate_successor(0, pacman_action)
-
-        #         # Default for other ghosts
-        #         for ghost_idx in range(1, self.state.get_num_agents()):
-        #             if ghost_idx == self.ghost_train_idx:
-        #                 continue
-        #             self.state = self.state.generate_successor(ghost_idx, Directions.STOP)
-        # else:
-        #     raise ValueError(f"Unknown training_mode: {self.training_mode}")
 
         # Compute reward and done
         after = self._get_snapshot()
@@ -287,18 +267,35 @@ class PacmanEnv(gym.Env):
         if self.obs_type == "grid":
             # wall, pellet, power pellet, pacman, ghost, scared ghost
             self.observation_space = spaces.Box(low=0, high=1, shape=(height, width, 6), dtype=int)
-        # elif self.obs_type == 'condensed_grid':
-        #     self.observation_space = spaces.Dict({
-        #         # Note that the use of int8 restricts our grid size to 127x127, this can easily be
-        #         # expanded if using larger grids, but we can leave it as is to keep it concise
-        #         "walls": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
-        #         "pellets": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
-                
-        #         # Also note that we use int instead of uint, so that values can be negative if need be
-        #         "pacman": spaces.Box(0, max(height, width), shape=(2,), dtype=np.int8),
-        #         "ghosts": spaces.Box(0, max(height, width), shape=(self.num_ghosts, 3), dtype=np.int8),
-        #         "power_pellets": spaces.Box(0, max(height, width), shape=(len(self.state.get_capsules()), 2), dype=np.int8)
-        #     })
+        elif self.obs_type == 'condensed_grid':
+            """
+            Our final condensed_grid output should look like:
+            {
+                walls: [h x w matrix with one-hot values for wall locations]
+                pellets: [h x w matrix with one-hot values for pellet locations]
+                pacman: (y, x) or (row, col)
+                ghosts: array of (row, col, scared_timer) arrays
+                power_pellets: array of (row, col) coordinate arrays
+            }
+            """
+            coord = spaces.Box(
+                low = np.array([0,0]),
+                high = np.array([height - 1, width - 1]),
+                shape=(2,)
+            )
+            
+            ghost = spaces.Box(low = np.array([0,0,0], dtype=np.int8),
+                               high = np.array([height - 1, width - 1, MAX_GHOST_SCARED_TIME], dtype=np.int8),
+                               dtype=np.int8
+                               )
+            
+            self.observation_space = spaces.Dict({
+                "walls": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
+                "pellets": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
+                "pacman": coord,
+                "ghosts": spaces.Sequence(ghost),
+                "power_pellets": spaces.Sequence(coord)
+            })
             
         else:
             raise ValueError(f"Unknown obs_type: {self.obs_type}, only option right now is 'grid'")
@@ -306,8 +303,8 @@ class PacmanEnv(gym.Env):
     def _make_obs(self):
         if self.obs_type == 'grid':
             return self._obs_grid()
-        # elif self.obs_type == 'condensed_grid':
-        #     self._obs_condensed()
+        elif self.obs_type == 'condensed_grid':
+            self._obs_condensed()
         else:
             raise ValueError(f"Unknown obs_type: {self.obs_type}, only option right now is 'grid'")
             
@@ -343,4 +340,27 @@ class PacmanEnv(gym.Env):
         return grid
     
     def _obs_condensed(self):
-        pass
+        data = self.state.data
+        
+        walls = np.asarray(data.layout.walls, dtype=np.int8).T  # Shape (H, W)
+        pellets = np.asarray(data.food, dtype=np.int8).T        # Shape (H, W)
+        
+        # Swap x and y to account for row-major operations
+        px, py = map(int, self.state.get_pacman_position())
+        pacman = np.array([py, px], dtype=np.int8)              # (row, col)
+        
+        ghosts = []
+        for ghost in self.state.get_ghost_states():
+            gy, gx = map(int, ghost.get_position())
+            timer = int(ghost.scared_timer)
+            ghosts.append(np.array([gy, gx, timer], dtype=np.int8))
+            
+        power_pellets = [np.array([cy, cx], dtype=np.int8) for (cx, cy) in data.capsules]
+        
+        return {
+            "walls": walls,
+            "pellets": pellets,
+            "pacman": pacman,
+            "ghosts": ghosts,
+            "power_pellets": power_pellets
+        }
