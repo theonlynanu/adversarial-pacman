@@ -12,7 +12,8 @@ while True:
     obs, reward, terminal, truncated, info = env.step(0)
     env.render()
     if terminal or truncated:
-        print("Final score", info["score"])
+        print("Final native score", info["native score"])
+        print("Final cumulative calculated reward", info["cumulative reward"])
         break
     time.sleep(0.05)
     

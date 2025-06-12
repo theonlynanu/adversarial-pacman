@@ -21,12 +21,14 @@ DIRECTIONS_TO_IDX = {
 }
 
 #Constants for reward calculations
-REWARD_PELLET = 1
-REWARD_POWER = 10
-REWARD_GHOST = 50
-REWARD_DEATH = -500
-REWARD_STEP = -1
-
+REWARD_PELLET = 1   # Eating a pellet
+REWARD_POWER = 10   # Eating a power pellet
+REWARD_GHOST = 50   # Eating a ghost
+REWARD_WIN = 500
+REWARD_DEATH = -500 # Dying.
+REWARD_STEP = -0.1    # Taking a step without eating a pellet
+REWARD_DELAY = -0.05 # Time delay to incentivize fast play. Might need to remove if
+                    # this messes up how ghosts try to minimize scoring
 
 
 """ ========================== MAIN CLASS ========================== """
@@ -117,11 +119,13 @@ class PacmanEnv(gym.Env):
         
         self.state = GameState()
         self.state.initialize(self.layout, self.num_ghosts)
-        self.prev_score = self.state.get_score()
+        
+        self.episode_reward = 0.0
         
         return self._make_obs(), {}
     
     def step(self, action: int):
+        before = self._get_snapshot()
         # Determine pacman action
         if self.training_mode == 'pacman':
             # Apply action to Pacman
@@ -190,10 +194,11 @@ class PacmanEnv(gym.Env):
         #     raise ValueError(f"Unknown training_mode: {self.training_mode}")
 
         # Compute reward and done
-        reward = self.state.get_score() - self.prev_score
-        self.prev_score = self.state.get_score()
+        after = self._get_snapshot()
+        reward = self._reward_from_snapshot(before, after)
+        self.episode_reward += reward       # Not sure if this is strictly necessary, but it feels useful
         truncated = False # Keep this here in case we decide to set time limits
-        info = {"score": self.state.get_score()}
+        info = {"calculated reward": reward, "native score": self.state.get_score(), "cumulative reward": self.episode_reward}
 
         return self._make_obs(), reward, terminated, truncated, info
 
@@ -237,6 +242,41 @@ class PacmanEnv(gym.Env):
         from pacman_engine.graphics_display import PacmanGraphics
         self._display = PacmanGraphics(frame_time=self.frame_time)
         self._display.initialize(self.state.data)
+        
+    def _get_snapshot(self):
+        """Return a tuple of state features (not exact state representation)
+        that can inform our scoring. Does NOT encode state itself - we'll need
+        a full hash of the observation to do that."""
+        
+        data = self.state.data
+        eaten_ghosts = sum(data._eaten[1:])
+        return (
+            data.food.count(),  # Pellets remaining
+            len(data.capsules), # Power pellets remaining
+            eaten_ghosts,
+            data._win,          # In win state?
+            data._lose          # In lose state?
+        )
+        
+    def _reward_from_snapshot(self, before, after):
+        b_pellets, b_power, b_eaten, b_win, b_lose = before
+        a_pellets, a_power, a_eaten, a_win, a_lose = after
+        
+        reward = 0.0
+        
+        reward += REWARD_PELLET * (b_pellets - a_pellets)    # Determine difference in pellets
+        reward += REWARD_POWER * (b_power - a_power)         # and power pellets
+        reward += REWARD_GHOST * (b_eaten - a_eaten)         # Was a ghost eaten? (I'm not 100 sure this actually works)
+        reward += REWARD_DELAY                               # Stable per-snapshot delay
+        
+        if a_win and not b_win:
+            reward += REWARD_WIN
+        if a_lose and not b_lose:
+            reward += REWARD_DEATH
+            
+        return reward
+        
+        
             
         
         
