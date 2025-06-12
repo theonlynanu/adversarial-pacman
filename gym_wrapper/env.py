@@ -343,8 +343,8 @@ class PacmanEnv(gym.Env):
     def _obs_condensed(self):
         data = self.state.data
         
-        walls = np.asarray(data.layout.walls, dtype=np.int8).T  # Shape (H, W)
-        pellets = np.asarray(data.food, dtype=np.int8).T        # Shape (H, W)
+        walls = np.asarray(data.layout.walls.data, dtype=np.int8).T  # Shape (H, W)
+        pellets = np.asarray(data.food.data, dtype=np.int8).T        # Shape (H, W)
         
         # Swap x and y to account for row-major operations
         px, py = map(int, self.state.get_pacman_position())

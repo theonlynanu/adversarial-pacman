@@ -2,7 +2,7 @@ import time
 
 from gym_wrapper.env import PacmanEnv
 env = PacmanEnv(render_mode="graphics",
-               obs_type="grid",
+               obs_type="condensed_grid",
                training_agent=None,
                )
 
