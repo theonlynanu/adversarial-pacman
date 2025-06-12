@@ -26,11 +26,11 @@ REWARD_POWER = 10   # Eating a power pellet
 REWARD_GHOST = 50   # Eating a ghost
 REWARD_WIN = 500
 REWARD_DEATH = -500 # Dying.
-REWARD_STEP = -0.1    # Taking a step without eating a pellet
+REWARD_STEP = -0.1    # Taking a step without eating a pellet - currently unused since I think a general delay might work
 REWARD_DELAY = -0.05 # Time delay to incentivize fast play. Might need to remove if
                     # this messes up how ghosts try to minimize scoring
-
-MAX_GHOST_SCARED_TIME = 40
+from pacman_engine.pacman import SCARED_TIME
+MAX_GHOST_SCARED_TIME = SCARED_TIME
 
 """ ========================== MAIN CLASS ========================== """
 class PacmanEnv(gym.Env):
@@ -234,8 +234,8 @@ class PacmanEnv(gym.Env):
             data.food.count(),  # Pellets remaining
             len(data.capsules), # Power pellets remaining
             eaten_ghosts,
-            data._win,          # In win state?
-            data._lose          # In lose state?
+            self.state.is_win(),# In win state?
+            self.state.is_lose()# In lose state?
         )
         
     def _reward_from_snapshot(self, before, after):
@@ -281,7 +281,8 @@ class PacmanEnv(gym.Env):
             coord = spaces.Box(
                 low = np.array([0,0]),
                 high = np.array([height - 1, width - 1]),
-                shape=(2,)
+                shape=(2,),
+                dtype=np.int8
             )
             
             ghost = spaces.Box(low = np.array([0,0,0], dtype=np.int8),
@@ -304,7 +305,7 @@ class PacmanEnv(gym.Env):
         if self.obs_type == 'grid':
             return self._obs_grid()
         elif self.obs_type == 'condensed_grid':
-            self._obs_condensed()
+            return self._obs_condensed()
         else:
             raise ValueError(f"Unknown obs_type: {self.obs_type}, only option right now is 'grid'")
             
@@ -351,7 +352,8 @@ class PacmanEnv(gym.Env):
         
         ghosts = []
         for ghost in self.state.get_ghost_states():
-            gy, gx = map(int, ghost.get_position())
+            # Same as above, swapping to keep the output row-major
+            gx, gy = map(int, ghost.get_position())
             timer = int(ghost.scared_timer)
             ghosts.append(np.array([gy, gx, timer], dtype=np.int8))
             
