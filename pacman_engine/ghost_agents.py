@@ -16,8 +16,9 @@ from pacman_engine.game import Agent
 from pacman_engine.game import Actions
 from pacman_engine.game import Directions
 import random
-from pacman_engine.util import manhattan_distance
+from pacman_engine.util import manhattan_distance, PriorityQueue
 import pacman_engine.util as util
+
 
 
 class GhostAgent(Agent):
@@ -89,3 +90,49 @@ class DirectionalGhost(GhostAgent):
             dist[a] += (1-best_prob) / len(legal_actions)
         dist.normalize()
         return dist
+
+
+class AStarGhost(Agent):
+    def __init__(self, index):
+        super().__init__(index)
+
+    def get_action(self, state):
+        start = state.get_ghost_position(self.index)
+        goal = state.get_pacman_position()
+
+        path = self.a_star_search(state, start, goal)
+
+        if len(path) >= 2:
+            next_pos = path[1]
+            actions = Actions.get_legal_actions(state.get_ghost_state(self.index).configuration, state.get_walls())
+            for action in actions:
+                vector = Actions.direction_to_vector(action)
+                successor = (int(start[0] + vector[0]), int(start[1] + vector[1]))
+                if successor == next_pos:
+                    return action
+
+        # Fallback if path is empty
+        return Directions.STOP
+
+    def a_star_search(self, state, start, goal):
+        frontier = PriorityQueue()
+        frontier.push((start, []), 0)
+        visited = set()
+
+        while not frontier.is_empty():
+            current_pos, path = frontier.pop()
+
+            if current_pos in visited:
+                continue
+            visited.add(current_pos)
+
+            if current_pos == goal:
+                return path + [current_pos]
+
+            for neighbor in Actions.get_legal_neighbors(current_pos, state.get_walls()):
+                if neighbor not in visited:
+                    new_path = path + [current_pos]
+                    cost = len(new_path) + manhattan_distance(neighbor, goal)
+                    frontier.push((neighbor, new_path), cost)
+
+        return [start]  # fallback if no path found
