@@ -41,8 +41,8 @@ class PacmanEnv(gym.Env):
                     capabilities of the base game engine to either create the GUI window
                     or run the text game in-terminal. (default: 'graphics')
         obs_type:   str - Type of observations the agent can make. 'grid' for a
-                    full board view, 'directional' for an immediate view + directional
-                    view of the ghosts (default: 'grid')
+                    full board view, plan to add 'directional' for partially observable, immediate view
+                    + directional view of the ghosts (default: 'grid')
         training_agent: str - 'pacman' | 'ghost' | None, defines the agent currently being trained
         ghost_train_idx: int - which ghost agent is being trained, if training_agent == 'ghost'
         pacman_agent:   str - defines the agent that should play for pacman
@@ -287,12 +287,27 @@ class PacmanEnv(gym.Env):
         if self.obs_type == "grid":
             # wall, pellet, power pellet, pacman, ghost, scared ghost
             self.observation_space = spaces.Box(low=0, high=1, shape=(height, width, 6), dtype=int)
+        # elif self.obs_type == 'condensed_grid':
+        #     self.observation_space = spaces.Dict({
+        #         # Note that the use of int8 restricts our grid size to 127x127, this can easily be
+        #         # expanded if using larger grids, but we can leave it as is to keep it concise
+        #         "walls": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
+        #         "pellets": spaces.Box(0, 1, shape=(height, width), dtype=np.int8),
+                
+        #         # Also note that we use int instead of uint, so that values can be negative if need be
+        #         "pacman": spaces.Box(0, max(height, width), shape=(2,), dtype=np.int8),
+        #         "ghosts": spaces.Box(0, max(height, width), shape=(self.num_ghosts, 3), dtype=np.int8),
+        #         "power_pellets": spaces.Box(0, max(height, width), shape=(len(self.state.get_capsules()), 2), dype=np.int8)
+        #     })
+            
         else:
             raise ValueError(f"Unknown obs_type: {self.obs_type}, only option right now is 'grid'")
         
     def _make_obs(self):
         if self.obs_type == 'grid':
             return self._obs_grid()
+        # elif self.obs_type == 'condensed_grid':
+        #     self._obs_condensed()
         else:
             raise ValueError(f"Unknown obs_type: {self.obs_type}, only option right now is 'grid'")
             
@@ -326,4 +341,6 @@ class PacmanEnv(gym.Env):
             grid[int(y), int(x), layer] = 1
             
         return grid
-        
+    
+    def _obs_condensed(self):
+        pass
