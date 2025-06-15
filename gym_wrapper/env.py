@@ -1,12 +1,16 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import time
 
 from pacman_engine.pacman import Directions, GameState
 from pacman_engine.layout import get_layout
 from pacman_engine.keyboard_agents import KeyboardAgent
 from pacman_engine.ghost_agents import RandomGhost
 from pacman_engine.graphics_utils import begin_graphics
+from pacman_engine.util import manhattan_distance
+
+
 
 """ -------------------- CONSTANTS AND HELPERS -------------------- """
 DIRECTIONS_TO_IDX = {
@@ -85,7 +89,13 @@ class PacmanEnv(gym.Env):
         # Attach agent objects if provided
         self.pacman_agent = pacman_agent or KeyboardAgent()
         if ghost_agents is None:
-            ghost_agents = [RandomGhost(i + 1) for i in range(self.num_ghosts)]
+            from pacman_engine.ghost_agents import AStarGhost
+            shared_info = {}
+            ghost_agents = [
+                AStarGhost(1, shared_info),
+                AStarGhost(2, shared_info),
+                *[RandomGhost(i + 1) for i in range(2, self.num_ghosts)]
+            ]
         if len(ghost_agents) < self.num_ghosts:
             raise ValueError("Not enough ghost Agents were provided for this layout")
         self.ghost_agents = ghost_agents
@@ -263,7 +273,7 @@ class PacmanEnv(gym.Env):
     def _get_min_ghost_distance(self):
         pac_pos = self.state.get_pacman_position()
         ghost_positions = [g.get_position() for g in self.state.get_ghost_states()]
-        distances = [util.manhattan_distance(pac_pos, ghost) for ghost in ghost_positions]
+        distances = [manhattan_distance(pac_pos, ghost) for ghost in ghost_positions]
         return min(distances) if distances else float('inf')
 
 

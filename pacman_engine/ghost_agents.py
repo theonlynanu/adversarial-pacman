@@ -93,31 +93,74 @@ class DirectionalGhost(GhostAgent):
 
 
 class AStarGhost(Agent):
-    def __init__(self, index):
+    def __init__(self, index, shared_info=None):
         super().__init__(index)
+        self.shared_info = shared_info if shared_info is not None else {}
 
     def get_action(self, state):
         start = state.get_ghost_position(self.index)
-        goal = state.get_pacman_position()
+        ghost_state = state.get_ghost_state(self.index)
 
+        if ghost_state.scared_timer > 0:
+            # Ghost is scared — run away from Pacman
+            goal = self._farthest_legal_tile(state, start, state.get_pacman_position())
+        else:
+            goal = state.get_pacman_position()
+
+
+        # Read other ghost’s path
+        other_index = 2 if self.index == 1 else 1
+        other_path = self.shared_info.get(f"path_{other_index}", [])
+
+        # Plan path with A*
         path = self.a_star_search(state, start, goal)
 
+        # If both ghosts try to go to the same next spot, offset this one
+        if len(path) >= 2 and len(other_path) >= 2 and path[1] == other_path[1]:
+            # Slight detour to avoid same spot
+            neighbors = Actions.get_legal_neighbors(start, state.get_walls())
+            for n in neighbors:
+                if n != other_path[1]:
+                    path = [start, n]
+                    break
+
+        # Save this ghost’s path
+        self.shared_info[f"path_{self.index}"] = path
+
+        # Convert next step to action
         if len(path) >= 2:
             next_pos = path[1]
-            actions = Actions.get_legal_actions(state.get_ghost_state(self.index).configuration, state.get_walls())
+            actions = state.get_legal_actions(self.index)
             for action in actions:
                 vector = Actions.direction_to_vector(action)
                 successor = (int(start[0] + vector[0]), int(start[1] + vector[1]))
                 if successor == next_pos:
                     return action
 
-        # Fallback if path is empty
         return Directions.STOP
+
+    def _farthest_legal_tile(self, state, start, pacman_pos):
+        walls = state.get_walls()
+        neighbors = Actions.get_legal_neighbors(start, walls)
+        farthest = start
+        max_dist = -1
+        for n in neighbors:
+            dist = manhattan_distance(n, pacman_pos)
+            if dist > max_dist:
+                farthest = n
+                max_dist = dist
+        return farthest
+
 
     def a_star_search(self, state, start, goal):
         frontier = PriorityQueue()
         frontier.push((start, []), 0)
         visited = set()
+        
+        # Get the path of the other ghost to avoid overlapping
+        other_index = 2 if self.index == 1 else 1
+        other_path = self.shared_info.get(f"path_{other_index}", [])
+
 
         while not frontier.is_empty():
             current_pos, path = frontier.pop()
@@ -133,6 +176,12 @@ class AStarGhost(Agent):
                 if neighbor not in visited:
                     new_path = path + [current_pos]
                     cost = len(new_path) + manhattan_distance(neighbor, goal)
+
+                    # Penalize overlap with other ghost's path
+                    if neighbor in other_path:
+                        cost += 3  # You can tune this value for better separation
+
                     frontier.push((neighbor, new_path), cost)
 
         return [start]  # fallback if no path found
+
