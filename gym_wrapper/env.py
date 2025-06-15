@@ -176,6 +176,9 @@ class PacmanEnv(gym.Env):
         # Compute reward and done
         after = self._get_snapshot()
         reward = self._reward_from_snapshot(before, after)
+        ghost_dist = self._get_min_ghost_distance()  # Add exponential penalty based on ghost distance (closer = higher penalty)
+        ghost_weight = np.exp(-0.5 * ghost_dist)   # decay factor can be tuned
+        reward -= ghost_weight * 5                 # scale can be tuned too
         self.episode_reward += reward       # Not sure if this is strictly necessary, but it feels useful
         truncated = False # Keep this here in case we decide to set time limits
         info = {"calculated reward": reward, "native score": self.state.get_score(), "cumulative reward": self.episode_reward}
@@ -255,8 +258,15 @@ class PacmanEnv(gym.Env):
             reward += REWARD_DEATH
             
         return reward
-        
-        
+    
+    #Add discounted/exponential reward shaping based on ghost distance
+    def _get_min_ghost_distance(self):
+        pac_pos = self.state.get_pacman_position()
+        ghost_positions = [g.get_position() for g in self.state.get_ghost_states()]
+        distances = [util.manhattan_distance(pac_pos, ghost) for ghost in ghost_positions]
+        return min(distances) if distances else float('inf')
+
+
             
         
         
@@ -366,3 +376,4 @@ class PacmanEnv(gym.Env):
             "ghosts": ghosts,
             "power_pellets": power_pellets
         }
+    
