@@ -98,32 +98,29 @@ class AStarGhost(Agent):
         self.shared_info = shared_info if shared_info is not None else {}
 
     def get_action(self, state):
-        start = state.get_ghost_position(self.index)
+        # RE-READ the updated ghost state (ensure this comes *after* Pac-Man move)
         ghost_state = state.get_ghost_state(self.index)
-
-        if ghost_state.scared_timer > 0:
-            # Ghost is scared — run away from Pacman
-            goal = self._farthest_legal_tile(state, start, state.get_pacman_position())
-        else:
-            goal = state.get_pacman_position()
-
-
-        # Read other ghost’s path
+        start = ghost_state.get_position()
+        pacman_pos = state.get_pacman_position()
+        
         other_index = 2 if self.index == 1 else 1
         other_path = self.shared_info.get(f"path_{other_index}", [])
 
-        # Plan path with A*
-        path = self.a_star_search(state, start, goal)
+        # Re-check scared status
+        if ghost_state.scared_timer > 0:
+            goal = self._farthest_legal_tile(state, start, pacman_pos)
+            path = self.a_star_search(state, start, goal)
+        else:
+            goal = pacman_pos
+            path = self.a_star_search(state, start, goal)
 
-        # If both ghosts try to go to the same next spot, offset this one
-        if len(path) >= 2 and len(other_path) >= 2 and path[1] == other_path[1]:
-            # Slight detour to avoid same spot
-            neighbors = Actions.get_legal_neighbors(start, state.get_walls())
-            for n in neighbors:
-                if n != other_path[1]:
-                    path = [start, n]
-                    break
-
+            if len(path) >= 2 and len(other_path) >= 2 and path[1] == other_path[1]:
+                neighbors = Actions.get_legal_neighbors(start, state.get_walls())
+                for n in neighbors:
+                    if n != other_path[1]:
+                        path = [start, n]
+                        break
+                    
         # Save this ghost’s path
         self.shared_info[f"path_{self.index}"] = path
 
@@ -137,7 +134,11 @@ class AStarGhost(Agent):
                 if successor == next_pos:
                     return action
 
-        return Directions.STOP
+        legal_actions = state.get_legal_actions(self.index)
+        if legal_actions:
+            return random.choice(legal_actions)
+        else:
+            return Directions.STOP 
 
     def _farthest_legal_tile(self, state, start, pacman_pos):
         walls = state.get_walls()
@@ -146,9 +147,11 @@ class AStarGhost(Agent):
         max_dist = -1
         for n in neighbors:
             dist = manhattan_distance(n, pacman_pos)
-            if dist > max_dist:
-                farthest = n
-                max_dist = dist
+            # 🚫 Reject positions that move ghost *closer* to Pacman
+            if dist > manhattan_distance(start, pacman_pos):
+                if dist > max_dist:
+                    farthest = n
+                    max_dist = dist
         return farthest
 
 
