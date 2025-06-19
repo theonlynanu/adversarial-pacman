@@ -9,6 +9,7 @@ from pacman_engine.keyboard_agents import KeyboardAgent
 from pacman_engine.ghost_agents import RandomGhost
 from pacman_engine.graphics_utils import begin_graphics
 from pacman_engine.util import manhattan_distance
+from gym_wrapper.our_agents import QPacman
 
 
 
@@ -87,7 +88,7 @@ class PacmanEnv(gym.Env):
         begin_graphics()
         
         # Attach agent objects if provided
-        self.pacman_agent = pacman_agent or KeyboardAgent()
+        self.pacman_agent = pacman_agent or QPacman()
         if ghost_agents is None:
             from pacman_engine.ghost_agents import AStarGhost
             shared_info = {}
