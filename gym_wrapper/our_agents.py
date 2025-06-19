@@ -3,6 +3,8 @@ from pacman_engine.game import Actions
 from pacman_engine.game import Directions
 from pacman_engine.pacman import GameState
 import random
+import json, gzip, pickle, os
+
 from pacman_engine.util import manhattan_distance, PriorityQueue
 
 
@@ -155,12 +157,12 @@ class AStarGhost(Agent):
 class QPacman(Agent):
     def __init__(self,
                  gamma = 0.99,
-                 eta = 1,
+                 epsilon = 1,
                  decay_rate = 0.99999,
                  ):
         super().__init__(index = 0)
         self.gamma = gamma
-        self.eta = eta
+        self.epsilon = epsilon
         self.decay_rate = decay_rate
         
         
@@ -168,19 +170,30 @@ class QPacman(Agent):
         self.visited: dict[int, int] = {}                           # state_hash: visited_count
         self.visited_sa: dict[tuple[tuple, str]: int] = {}          # (state_hash, action): observed_count                      
         
+    """ ========================= Q LEARNING METHODS ========================= """    
+        
         
     def get_action(self, state: GameState):
+        """ Required by the Agent superclass - 
+        
+            Originally chose an action via epsilon greedy
+            using an adaptive epsilon, e_0 / (1 + state_visits), but decided
+            to go with a traditional decay rate
+        """
         s = self._state_key(state)
         legal = state.get_legal_actions(self.index)
-        visits = self.visited.get(s, 0)
-        eta = self.eta / (1.0 + visits)
         
         if not legal:
             return Directions.STOP          # Shouldn't really occur, but gives us a way to see if there's a error in logic
         
-        if random.random() < eta:
+        # Evaluate epsilon-greedy strategy
+        take_random = random.random() < self.epsilon
+        self.epsilon = self.epsilon * self.decay_rate
+        
+        if take_random:
             return random.choice(legal)
         
+        # Take Greedy approach
         q_best, a_best = float('-inf'), None
         for a in legal:
             q_val = self.Q.get((s, a), 0.0)
@@ -195,6 +208,10 @@ class QPacman(Agent):
                            action,
                            next_state: GameState,
                            reward):
+        """Called after the environment applies the action to get to a new state and
+        generate the reward. """
+        
+        
         s_key = self._state_key(state)
         s_key_n = self._state_key(next_state)
         
@@ -214,6 +231,8 @@ class QPacman(Agent):
         new_q = old_q + eta * (target - old_q)
         self.Q[(s_key, action)] = new_q
         
+        
+    """ ----------------------------- HELPER METHODS ----------------------------- """        
         
     def _state_key(self, state: GameState):
         """Takes a GameState and returns a tuple based on the feature set:
@@ -259,8 +278,6 @@ class QPacman(Agent):
             )
 
 
-        
-    
     def _get_cardinal(self, src, dest):
         """
         Maps relative positions to a direction from 0-3
@@ -284,22 +301,21 @@ class QPacman(Agent):
         """
         
         px, py = gamestate.get_pacman_position()
-        
         walls = gamestate.get_walls()
+        h, w = walls.height, walls.width
+        
+        inside = lambda x,y: 0 <= x < w and 0 <= y < h
         mask = 0
         
         
-        mask |= walls[px][py + 1] << 3  # Wall to north side (bit 3)
-        mask |= walls[px][py - 1] << 2  # Wall to south side (bit 2)
-        mask |= walls[px + 1][py] << 1  # Wall to East side (bit 1)
-        mask |= walls[px - 1][py]       # Wall to West side (bit 0)
+        if inside(px, py+1) and walls[px][py+1]:mask |= walls[px][py + 1] << 3  # Wall to north side (bit 3)
+        if inside(px, py-1) and walls[px][py-1]:mask |= walls[px][py - 1] << 2  # Wall to south side (bit 2)
+        if inside(px+1, py) and walls[px+1][py]:mask |= walls[px + 1][py] << 1  # Wall to East side (bit 1)
+        if inside(px-1, py) and walls[px-1][py]:mask |= walls[px - 1][py]       # Wall to West side (bit 0)
         
         return mask                     # 0-15
         
-        
-        
-        
-        
+                
     def _nearest_ghost_features(self, pac_pos, ghost_states):
         """Returns (direction bucket, distance bucket, timer bucket) for nearest ghost"""
     
@@ -357,4 +373,31 @@ class QPacman(Agent):
         
         return dir_buck, dist_buck
 
+    """ ~~~~~~~~~~~~~~~ UTILITY METHODS ~~~~~~~~~~~~~~~ """
+    def save(self, path: str):
+        """ Stores Q table and visited_sa. Uses gzip-pickle to compress large
+        Q table"""
         
+        with gzip.open(path, "wb") as file:
+            pickle.dump(
+                {
+                "Q": self.Q,
+                "visited": self.visited,
+                "visited_sa": self.visited_sa
+                },
+                file,
+                protocol=pickle.HIGHEST_PROTOCOL,
+            )
+            
+    @classmethod    
+    def load(cls, path: str, **kw):
+        """ Factory method for creating a new QPacman Instance with loaded tables"""
+        agent = cls(**kw)
+        if os.path.isfile(path):
+            with gzip.open(path, 'rb') as file:
+                blob = pickle.load(file)
+            agent.Q = blob["Q"]
+            agent.visited = blob["visited"]
+            agent.visited_sa = blob["visited_sa"]
+            
+        return agent
