@@ -158,11 +158,13 @@ class QPacman(Agent):
     def __init__(self,
                  gamma = 0.99,
                  epsilon = 1,
+                 epsilon_min = 0.0,
                  decay_rate = 0.99999,
                  ):
         super().__init__(index = 0)
         self.gamma = gamma
         self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
         self.decay_rate = decay_rate
         
         
@@ -188,7 +190,7 @@ class QPacman(Agent):
         
         # Evaluate epsilon-greedy strategy
         take_random = random.random() < self.epsilon
-        self.epsilon = self.epsilon * self.decay_rate
+        self.epsilon = max(self.epsilon * self.decay_rate, self.epsilon_min)
         
         if take_random:
             return random.choice(legal)
