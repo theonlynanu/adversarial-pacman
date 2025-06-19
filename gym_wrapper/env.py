@@ -85,7 +85,8 @@ class PacmanEnv(gym.Env):
         self.ghost_train_idx = ghost_train_idx
         self.num_ghosts = self.layout.get_num_ghosts()   # num_ghosts now automatically retrieved
         
-        begin_graphics()
+        if self.render_mode == "graphics":
+            begin_graphics()
         
         # Attach agent objects if provided
         self.pacman_agent = pacman_agent or QPacman()
