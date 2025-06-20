@@ -5,8 +5,27 @@ from gym_wrapper.our_agents import QPacman
 
 N_EPISODES = 50_000
 MAX_STEPS = 10_000
+SAVE_CHECKPOINTS = False
+CHECKPOINT_FREQUENCY = 5000
 
-agent = QPacman(gamma = 0.99, epsilon=1, epsilon_min=0.005)
+def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
+    xs, ys = zip(*position_log)
+    w, h = max(xs) + 1, max(ys) + 1
+    counts = np.zeros((h,w), dtype=int)
+    for x, y in position_log:
+        counts[y, x] += 1
+        
+    fig, ax = plt.subplots(figsize=(8, 6))
+    im = ax.imshow(counts, origin="lower")
+    ax.set_title(title)
+    ax.set_xlabel("x-coordinate")
+    ax.set_ylabel("y-coordinate")
+    fig.colorbar(im, ax=ax, label="# visits")
+    plt.tight_layout()
+    plt.savefig("heatmap.png")
+
+
+agent = QPacman(gamma = 0.99, epsilon=1, epsilon_min=0.001, decay_rate=0.99999)
 env = PacmanEnv(
     render_mode=None,
     obs_type="condensed_grid",
@@ -17,6 +36,7 @@ _action_to_idx = {d: i for i, d in enumerate(env._actions)}
 
 wins = 0
 losses = 0
+positions = []
 
 for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     obs, _ = env.reset()
@@ -24,12 +44,15 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     done = False
     steps = 0
     
-    if episode % 500 == 0:
-        agent.save(f"checkpoints/q_ep{episode}.pkl.gz")
+    if SAVE_CHECKPOINTS:
+        if episode % CHECKPOINT_FREQUENCY == 0:
+            agent.save(f"checkpoints/q_ep{episode}.pkl.gz")
     
     while not done and steps < MAX_STEPS:
         dir_action = agent.get_action(state_prev)
         idx_action = _action_to_idx[dir_action]
+        
+        positions.append(env.state.get_pacman_position())
         
         obs, reward, terminated, truncated, info = env.step(idx_action)
         done = terminated or truncated
@@ -39,7 +62,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
             elif env.state.is_lose():
                 losses += 1
             else:
-                print("ERROR")
+                print("ERROR - ended early")
             
         state_next = env.state
         
@@ -47,7 +70,10 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
         
         state_prev = state_next
         steps += 1
+    agent.decay_epsilon()
+    
         
+print(agent.epsilon)
     
 env.close()
 agent.save("q_pacman.pkl.gz")
@@ -58,7 +84,9 @@ import numpy as np
 visits = np.array(list(agent.visited.values()))
 plt.hist(visits, bins=50, log=True)
 plt.xlabel("# visits per state"); plt.ylabel("count"); plt.title("State-visit histogram")
-plt.show()
+plt.savefig("state_visit_histogram.png")
+
+create_position_heatmap(positions)
 
 print("Training Finished, tables saved.")
 print("SUMMARY STATISTICS:")

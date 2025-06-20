@@ -40,6 +40,8 @@ TIMER_BUCKETS = {
 
 NUM_ACTIONS_PACMAN = 5  # N,S,E,W,Stop
 
+OPTIMISTIC_Q = 5.0
+
 def bucket_distance(d):
     """ Returns the bucket 0-3 for a given Manhattan Distance"""
     for bucket, distance in DISTANCE_BUCKETS.items():
@@ -159,7 +161,7 @@ class QPacman(Agent):
                  gamma = 0.99,
                  epsilon = 1,
                  epsilon_min = 0.0,
-                 decay_rate = 0.99999,
+                 decay_rate = 0.9999,
                  ):
         super().__init__(index = 0)
         self.gamma = gamma
@@ -190,19 +192,19 @@ class QPacman(Agent):
         
         # Evaluate epsilon-greedy strategy
         take_random = random.random() < self.epsilon
-        self.epsilon = max(self.epsilon * self.decay_rate, self.epsilon_min)
         
         if take_random:
             return random.choice(legal)
         
         # Take Greedy approach
-        q_best, a_best = float('-inf'), None
-        for a in legal:
-            q_val = self.Q.get((s, a), 0.0)
-            if q_val > q_best:
-                q_best, a_best = q_val, a
-                
-        return a_best
+        q_vals = [(a, self.Q.get((s, a), 0.0)) for a in legal]
+        max_q = max(v for _, v in q_vals)
+        
+        if max_q == 0.0:
+            return random.choice(legal)
+        
+        best_actions = [a for a, v in q_vals if v == max_q]
+        return random.choice(best_actions)
     
     
     def observe_transition(self,
@@ -220,7 +222,15 @@ class QPacman(Agent):
         self.visited[s_key] = self.visited.get(s_key, 0) + 1
         self.visited_sa[(s_key, action)] = self.visited_sa.get((s_key, action), 0) + 1
         
-        eta = 1.0 / self.visited_sa[(s_key, action)]
+        # eta = 1.0 / self.visited_sa[(s_key, action)]
+        
+        visits_sa = self.visited_sa[(s_key, action)]
+        if visits_sa < 200:
+            eta = 0.5
+        elif visits_sa < 1000:
+            eta = 0.1
+        else:
+            eta = 0.05
         
         max_q_n = max(
             (self.Q.get((s_key_n, a_prime), 0.0)
@@ -232,6 +242,9 @@ class QPacman(Agent):
         old_q = self.Q.get((s_key, action), 0.0)
         new_q = old_q + eta * (target - old_q)
         self.Q[(s_key, action)] = new_q
+        
+    def decay_epsilon(self):
+        self.epsilon = max(self.epsilon * self.decay_rate, self.epsilon_min)
         
         
     """ ----------------------------- HELPER METHODS ----------------------------- """        

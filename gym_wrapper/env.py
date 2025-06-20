@@ -26,9 +26,9 @@ DIRECTIONS_TO_IDX = {
 }
 
 #Constants for reward calculations
-REWARD_PELLET = 1   # Eating a pellet
-REWARD_POWER = 10   # Eating a power pellet
-REWARD_GHOST = 50   # Eating a ghost
+REWARD_PELLET = 5   # Eating a pellet
+REWARD_POWER = 25   # Eating a power pellet
+REWARD_GHOST = 200   # Eating a ghost
 REWARD_WIN = 500
 REWARD_DEATH = -500 # Dying.
 REWARD_STEP = -0.1    # Taking a step without eating a pellet - currently unused since I think a general delay might work
@@ -262,7 +262,7 @@ class PacmanEnv(gym.Env):
         reward += REWARD_PELLET * (b_pellets - a_pellets)    # Determine difference in pellets
         reward += REWARD_POWER * (b_power - a_power)         # and power pellets
         reward += REWARD_GHOST * (b_eaten - a_eaten)         # Was a ghost eaten? (I'm not 100 sure this actually works)
-        reward += REWARD_DELAY                               # Stable per-snapshot delay
+        # reward += REWARD_DELAY                               # Stable per-snapshot delay
         
         if a_win and not b_win:
             reward += REWARD_WIN
