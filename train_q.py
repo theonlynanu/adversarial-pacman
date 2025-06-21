@@ -6,8 +6,10 @@ from gym_wrapper.our_agents import QPacman
 GAMMA = 0.99
 EPSILON_START = 1
 EPSILON_MIN = 0.001
-DECAY_RATE = 0.99999
+DECAY_RATE = 0.9999
 
+# ENSURE THAT THE CURRENT LAYOUT IS IN-LINE WITH WHAT YOU WANT TO TRAIN!
+LAYOUT = "originalClassic"
 
 N_EPISODES = 100_000
 MAX_STEPS = 10_000
@@ -33,13 +35,13 @@ def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
 
 def confirm_retrain(filepath, is_present):
     if CONTINUING_TRAINING and is_present:
-        print(f"Confirm that you are retraining {filepath}, updating its current state")
+        print(f"Confirm that you are retraining {filepath} using layout {LAYOUT}, updating its current state")
     elif CONTINUING_TRAINING and not is_present:
-        print(f"{filepath} not present, confirm you are writing new policy to {filepath}")
+        print(f"{filepath} not present, confirm you are writing new policy to {filepath} using {LAYOUT}")
     elif not CONTINUING_TRAINING and is_present:
-        print(f"Confirm that you are OVERWRITING the policy at {filepath} - this will destroy the current version!")
+        print(f"Confirm that you are OVERWRITING the policy at {filepath} on layout {LAYOUT}- this will destroy the current version!")
     elif not CONTINUING_TRAINING and not is_present:
-        print(f"Writing new policy to {filepath}...")
+        print(f"Writing new policy to {filepath} using {LAYOUT}...")
         return
     
     confirmed = False
@@ -52,12 +54,15 @@ def confirm_retrain(filepath, is_present):
         else:
             print(f"Response {confirmation} not understood.")
 
+
+
 def create_agent(table_path):
     if CONTINUING_TRAINING:
         return QPacman.load(table_path, gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
     else:
         return QPacman(gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~ PROGRAM START ~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 if len(sys.argv) > 1:
     table_path = pathlib.Path(sys.argv[1])
@@ -74,7 +79,7 @@ env = PacmanEnv(
     render_mode=None,
     obs_type="condensed_grid",
     training_agent="pacman",
-    layout="originalClassic"
+    layout=LAYOUT
 )
 
 _action_to_idx = {d: i for i, d in enumerate(env._actions)}
@@ -82,6 +87,7 @@ _action_to_idx = {d: i for i, d in enumerate(env._actions)}
 wins = 0
 losses = 0
 positions = []
+early_exits = 0
 
 for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     obs, _ = env.reset()
@@ -91,7 +97,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     
     if SAVE_CHECKPOINTS:
         if episode % CHECKPOINT_FREQUENCY == 0:
-            agent.save(f"checkpoints/q_ep{episode}.pkl.gz")
+            agent.save(f"checkpoints/q_ep_original_{episode}.pkl.gz")
     
     while not done and steps < MAX_STEPS:
         dir_action = agent.get_action(state_prev)
@@ -114,6 +120,10 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
         agent.observe_transition(state_prev, dir_action, state_next, reward)
         
         state_prev = state_next
+        if steps == MAX_STEPS:
+            early_exits += 1
+            print(f"Did not complete game in {MAX_STEPS} steps")
+        
         steps += 1
     agent.decay_epsilon()
     
@@ -140,3 +150,4 @@ print("States seen: ", len(agent.visited))
 print("Avg actions per seen state: ", len(agent.Q) / len(agent.visited))
 print("Wins: ", wins)
 print("Losses: ", losses)
+print("Early quits: ", early_exits)
