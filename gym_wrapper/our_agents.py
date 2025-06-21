@@ -40,7 +40,7 @@ TIMER_BUCKETS = {
 
 NUM_ACTIONS_PACMAN = 5  # N,S,E,W,Stop
 
-OPTIMISTIC_Q = 50
+OPTIMISTIC_Q = 0.0
 
 def bucket_distance(d):
     """ Returns the bucket 0-3 for a given Manhattan Distance"""
@@ -187,14 +187,19 @@ class QPacman(Agent):
         s = self._state_key(state)
         legal = state.get_legal_actions(self.index)
         
+        # Removes stop unless it's the only move left
+        if legal != ['Stop']:
+            legal.remove("Stop")
+        
         if not legal:
+            print("No legal moves?")
             return Directions.STOP          # Shouldn't really occur, but gives us a way to see if there's a error in logic
         
         # Evaluate epsilon-greedy strategy
         take_random = random.random() < self.epsilon
         
         if take_random:
-            return random.choice(legal)
+            act = random.choice(legal)
         
         # q_best, a_best = float('-inf'), None
         
@@ -232,7 +237,11 @@ class QPacman(Agent):
         self.visited[s_key] = self.visited.get(s_key, 0) + 1
         self.visited_sa[(s_key, action)] = self.visited_sa.get((s_key, action), 0) + 1
         
-        eta = 1.0 / self.visited_sa[(s_key, action)]
+        # eta = 1.0 / self.visited_sa[(s_key, action)]
+        
+        # TRYING A FIXED ALPHA
+        eta = 0.2
+        
         
         # visits_sa = self.visited_sa[(s_key, action)]
         # if visits_sa < 200:
