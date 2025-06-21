@@ -26,8 +26,8 @@ ACTIONS = [
 DISTANCE_BUCKETS = {
     # Shows the max manhattan distance for each bucket key
     0: 1,
-    1: 3,
-    2: 5,
+    1: 2,
+    2: 4,
     3: float('inf')
 }
 
@@ -196,6 +196,15 @@ class QPacman(Agent):
         if take_random:
             return random.choice(legal)
         
+        q_best, a_best = float('-inf'), None
+        
+        # for a in legal:
+        #     q_val = self.Q.get((s, a), 0.0)
+        #     if q_val > q_best:
+        #         q_best, a_best = q_val, a
+
+        # return a_best
+        
         # Take Greedy approach
         q_vals = [(a, self.Q.get((s, a), 0.0)) for a in legal]
         max_q = max(v for _, v in q_vals)
@@ -222,15 +231,15 @@ class QPacman(Agent):
         self.visited[s_key] = self.visited.get(s_key, 0) + 1
         self.visited_sa[(s_key, action)] = self.visited_sa.get((s_key, action), 0) + 1
         
-        # eta = 1.0 / self.visited_sa[(s_key, action)]
+        eta = 1.0 / self.visited_sa[(s_key, action)]
         
-        visits_sa = self.visited_sa[(s_key, action)]
-        if visits_sa < 200:
-            eta = 0.5
-        elif visits_sa < 1000:
-            eta = 0.1
-        else:
-            eta = 0.05
+        # visits_sa = self.visited_sa[(s_key, action)]
+        # if visits_sa < 200:
+        #     eta = 0.5
+        # elif visits_sa < 1000:
+        #     eta = 0.1
+        # else:
+        #     eta = 0.05
         
         max_q_n = max(
             (self.Q.get((s_key_n, a_prime), 0.0)
@@ -336,6 +345,7 @@ class QPacman(Agent):
     
         if not ghost_states:
             return 0, 3, 0      # Default feature set saying it is very far away
+        
         
         best_dist = float("inf")
         best_state = None
