@@ -26,13 +26,13 @@ DIRECTIONS_TO_IDX = {
 }
 
 #Constants for reward calculations
-REWARD_PELLET = 5   # Eating a pellet
-REWARD_POWER = 50   # Eating a power pellet
-REWARD_GHOST = 100   # Eating a ghost
-REWARD_WIN = 1e6
-REWARD_DEATH = -1e6 # Dying.
-REWARD_STEP = -0.1    # Taking a step without eating a pellet - currently unused since I think a general delay might work
-REWARD_DELAY = -0.05 # Time delay to incentivize fast play. Might need to remove if
+REWARD_PELLET = 10   # Eating a pellet
+REWARD_POWER = 0   # Eating a power pellet
+REWARD_GHOST = 200   # Eating a ghost
+REWARD_WIN = 500
+REWARD_DEATH = -500 # Dying.
+REWARD_STEP = -0    # Taking a step without eating a pellet - currently unused since I think a general delay might work
+REWARD_DELAY = -1 # Time delay to incentivize fast play. Might need to remove if
                     # this messes up how ghosts try to minimize scoring
 from pacman_engine.pacman import SCARED_TIME
 MAX_GHOST_SCARED_TIME = SCARED_TIME
