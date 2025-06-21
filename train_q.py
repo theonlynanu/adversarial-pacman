@@ -1,12 +1,19 @@
-import random, tqdm
+import random, tqdm, sys, pathlib
 from gym_wrapper.env import PacmanEnv
 from gym_wrapper.our_agents import QPacman
 
+########## HYPER PARAMS ##########
+GAMMA = 0.99
+EPSILON_START = 1
+EPSILON_MIN = 0.001
+DECAY_RATE = 0.99999
 
-N_EPISODES = 50_000
+
+N_EPISODES = 100_000
 MAX_STEPS = 10_000
-SAVE_CHECKPOINTS = False
+SAVE_CHECKPOINTS = True
 CHECKPOINT_FREQUENCY = 5000
+CONTINUING_TRAINING = False
 
 def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
     xs, ys = zip(*position_log)
@@ -24,12 +31,50 @@ def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
     plt.tight_layout()
     plt.savefig("heatmap.png")
 
+def confirm_retrain(filepath, is_present):
+    if CONTINUING_TRAINING and is_present:
+        print(f"Confirm that you are retraining {filepath}, updating its current state")
+    elif CONTINUING_TRAINING and not is_present:
+        print(f"{filepath} not present, confirm you are writing new policy to {filepath}")
+    elif not CONTINUING_TRAINING and is_present:
+        print(f"Confirm that you are OVERWRITING the policy at {filepath} - this will destroy the current version!")
+    elif not CONTINUING_TRAINING and not is_present:
+        print(f"Writing new policy to {filepath}...")
+        return
+    
+    confirmed = False
+    while not confirmed:
+        confirmation = input("[(Y)es / (N)o]    > ").lower()
+        if confirmation == 'y' or confirmation == "yes":
+            return
+        elif confirmation == 'n' or confirmation == "no":
+            sys.exit()
+        else:
+            print(f"Response {confirmation} not understood.")
 
-agent = QPacman(gamma = 0.99, epsilon=1, epsilon_min=0.001, decay_rate=0.99999)
+def create_agent(table_path):
+    if CONTINUING_TRAINING:
+        return QPacman.load(table_path, gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
+    else:
+        return QPacman(gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
+
+
+if len(sys.argv) > 1:
+    table_path = pathlib.Path(sys.argv[1])
+else:
+    table_path = pathlib.Path("q_pacman.pkl.gz")
+
+is_present = table_path.exists()
+
+confirm_retrain(table_path, is_present)
+
+agent = create_agent(table_path)
+
 env = PacmanEnv(
     render_mode=None,
     obs_type="condensed_grid",
-    training_agent="pacman"
+    training_agent="pacman",
+    layout="originalClassic"
 )
 
 _action_to_idx = {d: i for i, d in enumerate(env._actions)}
@@ -62,7 +107,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
             elif env.state.is_lose():
                 losses += 1
             else:
-                print("ERROR - ended early")
+                print("ERROR - ended early")        # Shouldn't really hit this unless we get stuck in a weird loop
             
         state_next = env.state
         
@@ -73,7 +118,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     agent.decay_epsilon()
     
         
-print(agent.epsilon)
+print("Final epsilon ", agent.epsilon)
     
 env.close()
 agent.save("q_pacman.pkl.gz")
