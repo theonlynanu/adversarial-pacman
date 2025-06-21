@@ -40,7 +40,7 @@ TIMER_BUCKETS = {
 
 NUM_ACTIONS_PACMAN = 5  # N,S,E,W,Stop
 
-OPTIMISTIC_Q = 5.0
+OPTIMISTIC_Q = 50
 
 def bucket_distance(d):
     """ Returns the bucket 0-3 for a given Manhattan Distance"""
@@ -196,7 +196,7 @@ class QPacman(Agent):
         if take_random:
             return random.choice(legal)
         
-        q_best, a_best = float('-inf'), None
+        # q_best, a_best = float('-inf'), None
         
         # for a in legal:
         #     q_val = self.Q.get((s, a), 0.0)
@@ -206,11 +206,9 @@ class QPacman(Agent):
         # return a_best
         
         # Take Greedy approach
-        q_vals = [(a, self.Q.get((s, a), 0.0)) for a in legal]
+        q_vals = [(a, self.Q.get((s, a), OPTIMISTIC_Q)) for a in legal]
         max_q = max(v for _, v in q_vals)
         
-        if max_q == 0.0:
-            return random.choice(legal)
         
         best_actions = [a for a, v in q_vals if v == max_q]
         return random.choice(best_actions)
@@ -228,6 +226,9 @@ class QPacman(Agent):
         s_key = self._state_key(state)
         s_key_n = self._state_key(next_state)
         
+        if (s_key, action) not in self.Q:
+            self.Q[(s_key, action)] = OPTIMISTIC_Q
+        
         self.visited[s_key] = self.visited.get(s_key, 0) + 1
         self.visited_sa[(s_key, action)] = self.visited_sa.get((s_key, action), 0) + 1
         
@@ -242,13 +243,13 @@ class QPacman(Agent):
         #     eta = 0.05
         
         max_q_n = max(
-            (self.Q.get((s_key_n, a_prime), 0.0)
+            (self.Q.get((s_key_n, a_prime), OPTIMISTIC_Q)
              for a_prime in next_state.get_legal_actions(self.index)),
-            default = 0.0
+            default = OPTIMISTIC_Q
         )
         
         target = reward + self.gamma * max_q_n
-        old_q = self.Q.get((s_key, action), 0.0)
+        old_q = self.Q[(s_key, action)]
         new_q = old_q + eta * (target - old_q)
         self.Q[(s_key, action)] = new_q
         
