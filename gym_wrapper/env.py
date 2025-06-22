@@ -94,7 +94,8 @@ class PacmanEnv(gym.Env):
             from pacman_engine.ghost_agents import AStarGhost
             shared_info = {}
             ghost_agents = [
-                AStarGhost(1, shared_info),
+                # AStarGhost(1, shared_info),
+                RandomGhost(1),
                 *[RandomGhost(i + 1) for i in range(1, self.num_ghosts)]
             ]
         if len(ghost_agents) < self.num_ghosts:
