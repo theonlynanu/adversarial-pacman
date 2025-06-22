@@ -4,18 +4,19 @@ from gym_wrapper.our_agents import QPacman
 
 ########## HYPER PARAMS ##########
 GAMMA = 0.99
-EPSILON_START = 1
-EPSILON_MIN = 0.001
+EPSILON_START = 0.5
+EPSILON_MIN = 0.02
 DECAY_RATE = 0.9999
 
 # ENSURE THAT THE CURRENT LAYOUT IS IN-LINE WITH WHAT YOU WANT TO TRAIN!
-LAYOUT = "originalClassic"
+LAYOUT = "mediumClassic"
 
-N_EPISODES = 100_000
+N_EPISODES = 20_000
 MAX_STEPS = 10_000
 SAVE_CHECKPOINTS = True
 CHECKPOINT_FREQUENCY = 5000
-CONTINUING_TRAINING = False
+CHECKPOINT_PREFIX = "checkpoints/curriculum_2"
+CONTINUING_TRAINING = True
 
 def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
     xs, ys = zip(*position_log)
@@ -66,6 +67,8 @@ def create_agent(table_path):
 
 if len(sys.argv) > 1:
     table_path = pathlib.Path(sys.argv[1])
+    if len(sys.argv) > 2:
+        LAYOUT = sys.argv[2]
 else:
     table_path = pathlib.Path("q_pacman.pkl.gz")
 
@@ -97,7 +100,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
     
     if SAVE_CHECKPOINTS:
         if episode % CHECKPOINT_FREQUENCY == 0:
-            agent.save(f"checkpoints/q_ep_original_{episode}.pkl.gz")
+            agent.save(f"{CHECKPOINT_PREFIX}_{episode}.gz")
     
     while not done and steps < MAX_STEPS:
         dir_action = agent.get_action(state_prev)
@@ -131,7 +134,7 @@ for episode in tqdm.trange(N_EPISODES, desc="Q Training"):
 print("Final epsilon ", agent.epsilon)
     
 env.close()
-agent.save("q_pacman.pkl.gz")
+agent.save(table_path)
 
 import matplotlib.pyplot as plt
 import numpy as np
