@@ -1,27 +1,48 @@
 import time, sys, pathlib
 from gym_wrapper.env import PacmanEnv
-from gym_wrapper.our_agents import QPacman
+from gym_wrapper.our_agents import QPacman, QPacmanRelative
+import argparse
 
 DEFAULT_LAYOUT = "originalClassic"
 
-
-if len(sys.argv) > 1:
-    filepath = pathlib.Path(sys.argv[1])
-    if len(sys.argv) > 2:
-        layout = sys.argv[2]
-    else:
-        layout = DEFAULT_LAYOUT
-else:
-    filepath = pathlib.Path("q_pacman.pkl.gz")
-    layout = DEFAULT_LAYOUT
+def parse_cli():
+    parser = argparse.ArgumentParser(
+        description="Replay a game using a trained policy"
+    )
     
-if not filepath.exists():
-    print(f"Policy file not found! - {filepath.name}")
-    sys.exit()
-else:
-    print(f"Replaying using policy at {filepath.name}")
+    parser.add_argument("policy_path",
+                        type=pathlib.Path,
+                        help="Path to the .gz file with the given policy"
+    )
+    parser.add_argument("layout",
+                        type=str,
+                        help="Name of layout as found in layouts/ - does not include the .lay suffix"
+    )
+    parser.add_argument("agent_type",
+                        type=str,
+                        help="standard | relative - model used to train the policy - important to match this correctly!"
+        
+    )
+    
+    args = parser.parse_args()
+    
+    return args
+    
+    
+args = parse_cli()
 
-pac_agent = QPacman.load(
+if args.agent_type == "standard":
+    agentType = QPacman
+elif args.agent_type == "relative":
+    agentType = QPacmanRelative
+else:
+    print(f"Unknown agent type [{args.agent_type}] - use -h for options")
+    sys.exit()
+    
+filepath = args.policy_path
+layout = args.layout
+
+pac_agent = agentType.load(
     filepath,
     epsilon = 0,
     epsilon_min = 0,
