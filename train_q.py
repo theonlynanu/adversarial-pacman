@@ -1,38 +1,45 @@
 import random, tqdm, sys, pathlib
 from gym_wrapper.env import PacmanEnv
-from gym_wrapper.our_agents import QPacman
+from gym_wrapper.our_agents import QPacman, QPacmanRelative
+import matplotlib.pyplot as plt
+import numpy as np
+import argparse
 
 ########## HYPER PARAMS ##########
 GAMMA = 0.99
-EPSILON_START = 0.5
+EPSILON_START = 1
 EPSILON_MIN = 0.02
-DECAY_RATE = 0.9999
+DECAY_RATE = 0.9998
 
 # ENSURE THAT THE CURRENT LAYOUT IS IN-LINE WITH WHAT YOU WANT TO TRAIN!
 LAYOUT = "mediumClassic"
 
-N_EPISODES = 20_000
-MAX_STEPS = 10_000
+N_EPISODES = 50_000
+MAX_STEPS = 2_000
 SAVE_CHECKPOINTS = True
 CHECKPOINT_FREQUENCY = 5000
 CHECKPOINT_PREFIX = "checkpoints/curriculum_2"
-CONTINUING_TRAINING = True
+CONTINUING_TRAINING = False
 
-def create_position_heatmap(position_log, title="Pac-Man Positional Visits"):
-    xs, ys = zip(*position_log)
-    w, h = max(xs) + 1, max(ys) + 1
-    counts = np.zeros((h,w), dtype=int)
-    for x, y in position_log:
-        counts[y, x] += 1
+def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename=f"{LAYOUT}_{N_EPISODES}_heatmap.png"):
+    if position_log.ndim != 2:
+        raise ValueError("Position log must be a 2-dimensional array (HxW)!")
         
     fig, ax = plt.subplots(figsize=(8, 6))
-    im = ax.imshow(counts, origin="lower")
+    im = ax.imshow(position_log, origin="lower", cmap="hot", interpolation="nearest")
     ax.set_title(title)
     ax.set_xlabel("x-coordinate")
     ax.set_ylabel("y-coordinate")
-    fig.colorbar(im, ax=ax, label="# visits")
+    
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8, label="# visits")
+    cbar.ax.yaxis.set_label_position("left")
+    
     plt.tight_layout()
-    plt.savefig("heatmap.png")
+    fig_path = pathlib.Path(filename)
+    plt.savefig(fig_path, dpi=150)
+    plt.close(fig)
+    
+    return fig_path
 
 def confirm_retrain(filepath, is_present):
     if CONTINUING_TRAINING and is_present:
