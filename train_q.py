@@ -8,8 +8,8 @@ import argparse
 ########## HYPER PARAMS ##########
 GAMMA = 0.99
 EPSILON_START = 1
-EPSILON_MIN = 0.02
-DECAY_RATE = 0.9998
+EPSILON_MIN = 0.0001
+DECAY_RATE = 0.9999
 
 # ENSURE THAT THE CURRENT LAYOUT IS IN-LINE WITH WHAT YOU WANT TO TRAIN!
 LAYOUT = "mediumClassic"
@@ -18,10 +18,10 @@ N_EPISODES = 50_000
 MAX_STEPS = 2_000
 SAVE_CHECKPOINTS = False
 CHECKPOINT_FREQUENCY = 5000
-CHECKPOINT_PREFIX = "checkpoints/curriculum_2"
+CHECKPOINT_PREFIX = "checkpoint"
 CONTINUING_TRAINING = False
 
-def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename=f"heatmaps/{LAYOUT}_{N_EPISODES}_heatmap.png"):
+def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename):
     if position_log.ndim != 2:
         raise ValueError("Position log must be a 2-dimensional array (HxW)!")
         
@@ -70,7 +70,7 @@ def create_agent(table_path, agentType):
     else:
         return agentType(gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
     
-def parse_cli() -> tuple[pathlib.Path, str, type]:
+def parse_cli() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Train a Q-learning Pac-Man Agent",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -144,9 +144,7 @@ def parse_cli() -> tuple[pathlib.Path, str, type]:
                         help="Frequency with which to save a checkpoint - will save every X episodes")
     
     args = parser.parse_args()
-    
-    agent_class = {"Standard": QPacman,
-                   "Relative": QPacmanRelative}
+
     
     return args
 
@@ -206,7 +204,7 @@ def main():
         
         if SAVE_CHECKPOINTS:
             if episode % CHECKPOINT_FREQUENCY == 0:
-                agent.save(f"{CHECKPOINT_PREFIX}_{episode}.gz")
+                agent.save(f"checkpoints/{CHECKPOINT_PREFIX}_{LAYOUT}_{episode}.gz")
         
         while not done and steps < MAX_STEPS:
             dir_action = agent.get_action(state_prev)
@@ -249,7 +247,7 @@ def main():
     plt.xlabel("# visits per state"); plt.ylabel("count"); plt.title("State-visit histogram")
     plt.savefig("state_visit_histogram.png")
 
-    create_position_heatmap(pos_counts)
+    create_position_heatmap(pos_counts, f"heatmaps/{agentType}_{LAYOUT}_{N_EPISODES}_heatmap.png")
 
     print("Training Finished, tables saved.")
     print("SUMMARY STATISTICS:")
