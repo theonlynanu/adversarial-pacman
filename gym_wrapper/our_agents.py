@@ -235,12 +235,13 @@ class QPacman(Agent):
         
         self.visited_sa[(s_key, action)] = self.visited_sa.get((s_key, action), 0) + 1
         
-        # eta = 1.0 / self.visited_sa[(s_key, action)]
+        # STANDARD ETA LEARNING RATE
+        eta = 1.0 / self.visited_sa[(s_key, action)]
         
-        # TRYING A FIXED ALPHA
-        eta = 0.2
+        # # FOR TRYING A FIXED ALPHA
+        # eta = 0.2
         
-        
+        # FOR TRYING A BUCKETED ALPHA
         # visits_sa = self.visited_sa[(s_key, action)]
         # if visits_sa < 200:
         #     eta = 0.5
