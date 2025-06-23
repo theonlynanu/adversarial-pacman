@@ -21,7 +21,7 @@ CHECKPOINT_FREQUENCY = 5000
 CHECKPOINT_PREFIX = "checkpoint"
 CONTINUING_TRAINING = False
 
-def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename):
+def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename=f"heatmaps/{LAYOUT}_{N_EPISODES}_heatmap.png"):
     if position_log.ndim != 2:
         raise ValueError("Position log must be a 2-dimensional array (HxW)!")
         
