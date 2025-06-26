@@ -21,7 +21,7 @@ CHECKPOINT_FREQUENCY = 5000
 CHECKPOINT_PREFIX = "checkpoint"
 CONTINUING_TRAINING = False
 
-def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional Visits", filename=f"heatmaps/{LAYOUT}_{N_EPISODES}_heatmap.png"):
+def create_position_heatmap(position_log: np.ndarray, title, filename):
     if position_log.ndim != 2:
         raise ValueError("Position log must be a 2-dimensional array (HxW)!")
         
@@ -43,11 +43,11 @@ def create_position_heatmap(position_log: np.ndarray, title="Pac-Man Positional 
 
 def confirm_retrain(filepath, is_present):
     if CONTINUING_TRAINING and is_present:
-        print(f"Confirm that you are retraining {filepath} using layout {LAYOUT}, updating its current state")
+        print(f"Confirm that you are retraining {filepath} using layout {LAYOUT}, updating its current state\nUse the -r flag to restart training")
     elif CONTINUING_TRAINING and not is_present:
         print(f"{filepath} not present, confirm you are writing new policy to {filepath} using {LAYOUT}")
     elif not CONTINUING_TRAINING and is_present:
-        print(f"Confirm that you are OVERWRITING the policy at {filepath} on layout {LAYOUT}- this will destroy the current version!")
+        print(f"Confirm that you are OVERWRITING the policy at {filepath} on layout {LAYOUT}- this will destroy the current version!\nOmit the -r if you want to continue training")
     elif not CONTINUING_TRAINING and not is_present:
         print(f"Writing new policy to {filepath} using {LAYOUT}...")
         return
@@ -63,12 +63,12 @@ def confirm_retrain(filepath, is_present):
             print(f"Response {confirmation} not understood.")
 
 
-
 def create_agent(table_path, agentType):
     if CONTINUING_TRAINING:
         return agentType.load(table_path, gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
     else:
         return agentType(gamma = GAMMA, epsilon=EPSILON_START, epsilon_min=EPSILON_MIN, decay_rate=DECAY_RATE)
+    
     
 def parse_cli() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -245,9 +245,9 @@ def main():
     visits = np.array(list(agent.visited_sa.values()))
     plt.hist(visits, bins=50, log=True)
     plt.xlabel("# visits per state"); plt.ylabel("count"); plt.title("State-visit histogram")
-    plt.savefig("state_visit_histogram.png")
+    plt.savefig(f"histograms/{args.agent_type}_{LAYOUT}_{N_EPISODES}_histogram.png")
 
-    create_position_heatmap(pos_counts, f"heatmaps/{agentType}_{LAYOUT}_{N_EPISODES}_heatmap.png")
+    print(f"Heatmap saved to {create_position_heatmap(pos_counts, 'Pac-Man Positional Visits', f'heatmaps/{args.agent_type}_{LAYOUT}_{N_EPISODES}_heatmap.png')}")
 
     print("Training Finished, tables saved.")
     print("SUMMARY STATISTICS:")
