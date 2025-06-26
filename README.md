@@ -148,7 +148,7 @@ Also of note is the ability to save checkpoints with specified frequency and par
 
 An example of a more detailed training call:
 ```bash
-python train_q.py old_policy.gz -s -e 100000 --epsilon-start 0.8 --epsilon-min 0.00001 -g 0.95 -d 0.9995 --checkpoint-prefix pol_update_12 --checkpoint-freq 5000
+python train_q.py old_policy.gz relative -s -e 100000 --epsilon-start 0.8 --epsilon-min 0.00001 -g 0.95 -d 0.9995 --checkpoint-prefix pol_update_12 --checkpoint-freq 5000
 ```
 This allows extremely granular tuning of the training variables, all without needing to edit the code itself.
 
