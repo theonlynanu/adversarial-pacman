@@ -1,7 +1,7 @@
 # AI Pac-Man Exploration
 A repository for testing AI-based solutions to Pac-Man, using the Berkeley Pac-Man Project as an environment. Complete with gymnasium-based wrapper and currently featuring a Q-learning routine for Pac-Man agents.
 
-![Example of Training Output](./images/example_training_cli.png)
+![Example of Training Output](./layout_images/originalClassic.png)
 
 ## Current Features
 - Q-Learning training and replay
