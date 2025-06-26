@@ -9,28 +9,28 @@ A repository for testing AI-based solutions to Pac-Man, using the Berkeley Pac-M
 - Heatmap and histogram generation for training observation
 ## Directory Structure
 ```
-gym_wrapper/ 				# Home for our Gymnasium wrapper and personal agents
-├── env.py 						# Main Gymnasium Environment
-└── our_agents.py 				# Our agents
-pacman_engine/ 				# Original Berkeley code updated to Python 3
-├── pacman.py 					# These files should not need to be touched
+gym_wrapper/ 			# Home for our Gymnasium wrapper and personal agents
+├── env.py 			# Main Gymnasium Environment
+└── our_agents.py 		# Our agents
+pacman_engine/ 			# Original Berkeley code updated to Python 3
+├── pacman.py 			# These files should not need to be touched
 ├── game.py 
 └── ... 
-checkpoints/ 				# Directory to save checkpoint policies if enabled
+checkpoints/ 			# Directory to save checkpoint policies if enabled
 ├── checkpoint_policy_a.gz 
 └── ...
-heatmaps/ 					# Directory to save heatmap images
+heatmaps/ 			# Directory to save heatmap images
 ├── heatmap.png 
 └── ... 
-histograms/ 				# Directory to save histograms
+histograms/ 			# Directory to save histograms
 ├── histogram.png 
 └── ... 
-policy_archive/ 			# Archival directory for storing previous policies
+policy_archive/ 		# Archival directory for storing previous policies
 ├── policy_a.gz 
 └── ... 
-keyboard_test.py 			# Program to play on a given layout
-train_q.py 					# Training routine
-play_q.py					# Program to replay generated policy files
+keyboard_test.py 		# Program to play on a given layout
+train_q.py 			# Training routine
+play_q.py			# Program to replay generated policy files
 ```
 
 ## Usage
