@@ -152,6 +152,7 @@ python train_q.py old_policy.gz -s -e 100000 --epsilon-start 0.8 --epsilon-min 0
 ```
 This allows extremely granular tuning of the training variables, all without needing to edit the code itself.
 
+### Decay Rate Choice
 The following table may be helpful for selecting an appropriate decay rate during training of various episode-counts, showing the value of epsilon at a given episode count for a few popular decay rates:
 
 | Episodes | d = 0.999 | d = 0.9995 | d = 0.9999 | d = 0.99995 | d = 0.99999 |
