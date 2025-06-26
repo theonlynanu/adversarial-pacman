@@ -27,13 +27,15 @@ DIRECTIONS_TO_IDX = {
 
 #Constants for reward calculations
 REWARD_PELLET = 10   # Eating a pellet
-REWARD_POWER = 0   # Eating a power pellet
+REWARD_POWER = 25   # Eating a power pellet
 REWARD_GHOST = 200   # Eating a ghost
 REWARD_WIN = 500
 REWARD_DEATH = -500 # Dying.
 REWARD_STEP = -0    # Taking a step without eating a pellet - currently unused since I think a general delay might work
 REWARD_DELAY = -1 # Time delay to incentivize fast play. Might need to remove if
                     # this messes up how ghosts try to minimize scoring
+                    
+DIST_PENALTY_SCALE = 10
 from pacman_engine.pacman import SCARED_TIME
 MAX_GHOST_SCARED_TIME = SCARED_TIME
 
@@ -94,9 +96,9 @@ class PacmanEnv(gym.Env):
             from pacman_engine.ghost_agents import AStarGhost
             shared_info = {}
             ghost_agents = [
-                # AStarGhost(1, shared_info),
-                RandomGhost(1),
-                *[RandomGhost(i + 1) for i in range(1, self.num_ghosts)]
+                AStarGhost(1, shared_info),
+                # RandomGhost(1),
+                *[AStarGhost(i + 1, shared_info) for i in range(1, self.num_ghosts)]
             ]
         if len(ghost_agents) < self.num_ghosts:
             raise ValueError("Not enough ghost Agents were provided for this layout")
@@ -188,9 +190,9 @@ class PacmanEnv(gym.Env):
         # Compute reward and done
         after = self._get_snapshot()
         reward = self._reward_from_snapshot(before, after)
-        ghost_dist = self._get_min_ghost_distance()  # Add exponential penalty based on ghost distance (closer = higher penalty)
-        ghost_weight = np.exp(-0.5 * ghost_dist)   # decay factor can be tuned
-        reward -= ghost_weight * 5                 # scale can be tuned too
+        # ghost_dist = self._get_min_ghost_distance()  # Add exponential penalty based on ghost distance (closer = higher penalty)
+        # ghost_weight = np.exp(-0.5 * ghost_dist)   # decay factor can be tuned
+        # reward -= ghost_weight * DIST_PENALTY_SCALE                 # scale can be tuned too
         self.episode_reward += reward       # Not sure if this is strictly necessary, but it feels useful
         truncated = False # Keep this here in case we decide to set time limits
         info = {"calculated reward": reward, "native score": self.state.get_score(), "cumulative reward": self.episode_reward}
@@ -262,8 +264,8 @@ class PacmanEnv(gym.Env):
         reward += REWARD_PELLET * (b_pellets - a_pellets)    # Determine difference in pellets
         reward += REWARD_POWER * (b_power - a_power)         # and power pellets
         reward += REWARD_GHOST * (b_eaten - a_eaten)         # Was a ghost eaten? (I'm not 100 sure this actually works)
-        reward += REWARD_STEP if b_eaten == a_eaten else 0  # Subtly movement to an empty square
-        reward += REWARD_DELAY
+        # reward += REWARD_STEP if b_eaten == a_eaten else 0  # Subtly punish movement to an empty square
+        reward += REWARD_DELAY if not a_lose or not a_win else 0
         
         if a_win and not b_win:
             reward += REWARD_WIN
