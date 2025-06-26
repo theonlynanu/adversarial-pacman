@@ -60,22 +60,22 @@ Reward weights are stored at the top of `gym_wrapper/env.py`. The following are 
 ```python
 DIST_PENALTY_SCALE = 0	# Scaling for exponential distance 
 REWARD_PELLET = 10  	# Eating a pellet
-REWARD_POWER = 25  		# Eating a power pellet
+REWARD_POWER = 25  	# Eating a power pellet
 REWARD_GHOST = 200  	# Eating a ghost
 REWARD_WIN = 500
 REWARD_DEATH = -500  	# Dying.
-REWARD_STEP = -0  		# Taking a step without eating a pellet 
-REWARD_DELAY = -1  		# Time delay applied to all steps
+REWARD_STEP = -0  	# Taking a step without eating a pellet 
+REWARD_DELAY = -1  	# Time delay applied to all steps
 ```
 ### Ghost Selection
-Currently, the `env.py` file will assign an AStarGhost agent to all ghosts. Extension to assign these on the fly is currently being developed. For now, if you want to change this behavior, edit the following section starting around line `82` of `gym_wrapper/env.py`:
+Currently, the `env.py` file will assign an AStarGhost agent to all ghosts. Extension to assign these on the fly is currently being developed. For now, if you want to change this behavior, edit the following section starting around line `82` of `gym_wrapper/env.py`, paying mind to the comments:
 ```python
 if ghost_agents is None:
 from pacman_engine.ghost_agents import AStarGhost
 shared_info = {}
 ghost_agents = [
 AStarGhost(1, shared_info),
-# RandomGhost(1),			## Uncomment this and comment the line above for one RandomGhost
+# RandomGhost(1),			# Uncomment this and comment the line above for one RandomGhost
 *[AStarGhost(i + 1, shared_info) for i in range(1, self.num_ghosts)]	
 # Change `AStarGhost` to `RandomGhost` above, and remove `shared_info` to populate all other ghosts as RandomGhosts
 ```
