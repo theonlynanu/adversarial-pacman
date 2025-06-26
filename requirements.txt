@@ -2,3 +2,7 @@ gymnasium>=1.0.0
 numpy>=1.24
 pillow>=9.0         # Used by some tkinter stuff - should be part of our default env anyway!
 tqdm>=4.0
+pygame>=2.3
+pandas>=2.0
+seaborn>=0.13
+matplotlib>=3.0
