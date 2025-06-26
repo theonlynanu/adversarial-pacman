@@ -75,7 +75,7 @@ from pacman_engine.ghost_agents import AStarGhost
 shared_info = {}
 ghost_agents = [
 AStarGhost(1, shared_info),
-# RandomGhost(1),			## Uncomment this for one RandomGhost
+# RandomGhost(1),			## Uncomment this and comment the line above for one RandomGhost
 *[AStarGhost(i + 1, shared_info) for i in range(1, self.num_ghosts)]	
 # Change `AStarGhost` to `RandomGhost` above, and remove `shared_info` to populate all other ghosts as RandomGhosts
 ```
