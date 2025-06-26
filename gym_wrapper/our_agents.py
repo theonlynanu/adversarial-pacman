@@ -27,7 +27,7 @@ DISTANCE_BUCKETS = {
     # Shows the max manhattan distance for each bucket key
     0: 1,
     1: 2,
-    2: 4,
+    2: 6,
     3: float('inf')
 }
 
@@ -558,7 +558,8 @@ class QPacmanRelative(Agent):
         if (s_key, rel_action) not in self.Q:
             self.Q[(s_key, rel_action)] = OPTIMISTIC_Q
         
-        eta = 1.0 / self.visited_sa[(s_key, rel_action)]
+        # eta = 1.0 / self.visited_sa[(s_key, rel_action)]
+        eta = 0.2
         
         curr_heading_n = next_state.get_pacman_state().get_direction()
         abs_legals_n = next_state.get_legal_actions(self.index)
