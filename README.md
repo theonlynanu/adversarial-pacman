@@ -175,5 +175,6 @@ The ending epsilon value should be printed when a training cycle completes, allo
 - Better selection of ghost agents for a given layout
 - Development of a Convolutional Neural Network to learn the game against A* ghosts
 - Development of a Deep-Q Network to learn the game against A* ghosts
+
 Please feel free to make a pull request or send me a message via my [website](https://danyalahmed.dev) if you have any other suggestions!
 
