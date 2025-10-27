@@ -13,7 +13,7 @@ Encode with 6 channels to start for the following observation space features:
 - Power pellets
 - Ghosts
 - Pac-Man
-- Scared ghosts
+- Scared ~~ghosts~~ timer
 
 With adaptive pooling, we should hopefully be able to create a map-agnostic encoding to be used by a Deep Q Network later on. Will have to experiment with differing output dimensions.
 
