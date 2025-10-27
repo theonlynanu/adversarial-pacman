@@ -6,20 +6,26 @@ import torch.optim as optim
 import typing as t
 
 
-class TinyEncoder(nn.module):
+class TinyEncoder(nn.Module):
     """Basic prototype for CNN encoding. Planning to use simple blocks.
-    conv -> ReLU -> conv -> ReLU -> GAP -> Linear
+    (NxCxHxW) -> conv -> ReLU -> conv -> ReLU -> GAP -> Linear -> (N, embed_dim)
 
-    Args:
-        nn (_type_): _description_
+    Expected channel order:
+    1. Pac-Man
+    2. Walls
+    3. Pellets
+    4. Power Pellets
+    5. Ghosts
+    6. Scared Timer Intensity
     """
+
     def __init__(
         self,
         in_channels: int = 6,                           # In channels
         embed_dim: int = 64,                            # Dimension of state embedding
         conv_channels: t.Tuple[int, int] = (16, 32),    # (C1, C2) filters 
         use_groupnorm: bool = False,                    # Whether to use group normalization
-        groups: int = 6,                                # Number of groups (ignored if use_groupnorm is false
+        groups: int = 8,                                # Number of groups (ignored if use_groupnorm is false
     ):
         
         super().__init__()
@@ -46,3 +52,24 @@ class TinyEncoder(nn.module):
         
         self.proj = nn.Linear(c2, embed_dim)
         
+        # Might want to play with non-default weight initialization a la Kaiming
+        
+    def forward(self, x: torch.Tensor):
+        """
+        Args:
+            x (torch.Tensor): (N, C, H, W) tensor normalized to [0,1]
+            
+            returns encoding of shape (N, embed_dim)
+        """
+        assert x.dim() == 4
+        
+        hidden = self.block1(x)
+        hidden = self.block2(hidden)
+        
+        # Adaptive global average pooling -> (N, c2, 1, 1)
+        hidden = self.gap(hidden)
+        hidden = torch.flatten(hidden, 1)
+        
+        z = self.proj(hidden)
+        
+        return z
