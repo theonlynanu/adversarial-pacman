@@ -44,12 +44,12 @@ play_q.py			# Program to replay generated policy files
 ### Import Dependencies
 1. Clone the repository:
    ```bash
-   git clone https://github.com/theonlynanu/adversarial-pacman.git
+   git clone https://github.com/theonlynanu/QPacman.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd adversarial-pacman
+   cd QPacman
    ```
 
 3. Install the required packages:
